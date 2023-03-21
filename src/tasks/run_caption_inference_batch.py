@@ -147,7 +147,7 @@ def run_inference_on_one(args, data_sample, model, tokenizer, tensorizer,
                 cap = tokenizer.decode(cap.tolist(), skip_special_tokens=True)
                 # logger.info(f"Prediction: {cap}")
                 # logger.info(f"Conf: {conf.item()}")
-                cap_conf_pairing.append(cap, conf.item())
+                cap_conf_pairing.append((cap, conf.item()))
             
             all_cap_conf_pairing.append(cap_conf_pairing)
 
@@ -508,10 +508,11 @@ def get_captions(checkpoint = "./models/table1/youcook2/best-checkpoint/model.bi
     
     shared_configs.shared_video_captioning_config(cbs=True, scst=True)
     args = get_custom_args(shared_configs)
-    
+    args = set_args_for_batch(args, checkpoint, eval_dir, video_batch_folder, device)
+    args.do_eval = True
     args = update_existing_config_for_inference(args)
     
-    args = set_args_for_batch(args, checkpoint, eval_dir, video_batch_folder, device)
+    
 
     # global training_saver
     args.device = torch.device(args.device)
@@ -539,7 +540,7 @@ def get_captions(checkpoint = "./models/table1/youcook2/best-checkpoint/model.bi
 
     tensorizer = build_tensorizer(args, tokenizer, is_train=False)
 
-    video_paths = get_dir_files(args.test_video_batch_dname)
+    video_paths = get_dir_files(video_batch_folder)
     # inference(args, args.test_video_fname, vl_transformer, tokenizer, tensorizer)
     batch_outputs = batch_inference(args, video_paths, vl_transformer, tokenizer, tensorizer)
     

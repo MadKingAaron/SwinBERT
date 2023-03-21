@@ -442,3 +442,6 @@ models/table1/youcook2/tokenizer/special_tokens_map.json
 models/table1/youcook2/tokenizer/vocab.txt
 models/video_swin_transformer/swin_base_patch244_window877_kinetics400_22k.pth
 models/video_swin_transformer/swin_base_patch244_window877_kinetics600_22k.pth
+
+
+input_videos/*.mp4
