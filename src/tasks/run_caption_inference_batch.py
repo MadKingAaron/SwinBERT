@@ -112,7 +112,7 @@ def inference(args, video_path, model, tokenizer, tensorizer):
 
 
 def get_batch_frames(args, video_paths, tensorizer):
-    batch= []
+    batch = []
     for video_path in video_paths:
         frames = _online_video_decode(args, video_path)
         preproc_frames = _transforms(args, frames)
@@ -124,7 +124,7 @@ def get_batch_frames(args, video_paths, tensorizer):
 
 
 def run_inference_on_one(args, data_sample, model, tokenizer, tensorizer,
-    inputs):
+    inputs, video_file:str = 'none'):
 
     inputs['input_ids'] = data_sample[0][None,:]
     inputs['attention_mask'] = data_sample[1][None,:]
@@ -142,15 +142,13 @@ def run_inference_on_one(args, data_sample, model, tokenizer, tensorizer,
         
         all_cap_conf_pairing = []
         for caps, confs in zip(all_caps, all_confs):
-            cap_conf_pairing = []
+            
             for cap, conf in zip(caps, confs):
                 cap = tokenizer.decode(cap.tolist(), skip_special_tokens=True)
                 # logger.info(f"Prediction: {cap}")
                 # logger.info(f"Conf: {conf.item()}")
-                cap_conf_pairing.append((cap, conf.item()))
+                all_cap_conf_pairing.append((video_file, cap, conf.item()))
             
-            all_cap_conf_pairing.append(cap_conf_pairing)
-
     return all_cap_conf_pairing
 
 def batch_inference(args, video_paths, model, tokenizer, tensorizer):
@@ -190,9 +188,9 @@ def batch_inference(args, video_paths, model, tokenizer, tensorizer):
         }
 
     batch_returns = []
-    for sample in batch:
+    for sample, video_path in zip(batch, video_paths):
         sample_return = run_inference_on_one(args, sample, model, tokenizer,
-                                             tensorizer, inputs)
+                                             tensorizer, inputs, video_path)
         batch_returns.append(sample_return)
 
     return batch_returns
