@@ -445,3 +445,4 @@ models/video_swin_transformer/swin_base_patch244_window877_kinetics600_22k.pth
 
 
 input_videos/*.mp4
+tester.py
