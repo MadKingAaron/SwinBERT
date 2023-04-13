@@ -114,7 +114,7 @@ def get_summary(captions:list, summarizer):
 if __name__ == "__main__":
     device = "cuda:0"
     print(torch.version.cuda)
-    summarizer = FlaxLongT5Summarizer()
+    # summarizer = FlaxLongT5Summarizer()
     # summarizer = T5Summarizer()
     comparitor = Sentence_Compare(device=device)
     
@@ -128,4 +128,4 @@ if __name__ == "__main__":
     print(parsed_output)
     print(len(parsed_output))
 
-    print(summarizer.summarize(parsed_output))
+    # print(summarizer.summarize(parsed_output))
