@@ -196,98 +196,6 @@ def batch_inference(args, video_paths, model, tokenizer, tensorizer):
     return batch_returns
 
 
-   # with torch.no_grad():
-
-        # inputs = {'is_decode': True,
-        #     'input_ids': data_sample[0][None,:], 'attention_mask': data_sample[1][None,:],
-        #     'token_type_ids': data_sample[2][None,:], 'img_feats': data_sample[3][None,:],
-        #     'masked_pos': data_sample[4][None,:],
-        #     'do_sample': False,
-        #     'bos_token_id': cls_token_id,
-        #     'pad_token_id': pad_token_id,
-        #     'eos_token_ids': [sep_token_id],
-        #     'mask_token_id': mask_token_id,
-        #     # for adding od labels
-        #     'add_od_labels': args.add_od_labels, 'od_labels_start_posid': args.max_seq_a_length,
-        #     # hyperparameters of beam search
-        #     'max_length': args.max_gen_length,
-        #     'num_beams': args.num_beams,
-        #     "temperature": args.temperature,
-        #     "top_k": args.top_k,
-        #     "top_p": args.top_p,
-        #     "repetition_penalty": args.repetition_penalty,
-        #     "length_penalty": args.length_penalty,
-        #     "num_return_sequences": args.num_return_sequences,
-        #     "num_keep_best": args.num_keep_best,
-        # }
-
-    #     inputs = {'is_decode': True,
-    #         'input_ids': data_sample[0][None,:], 'attention_mask': data_sample[1][None,:],
-    #         'token_type_ids': data_sample[2][None,:], 'img_feats': data_sample[3][None,:],
-    #         'masked_pos': data_sample[4][None,:],
-    #         'do_sample': False,
-    #         'bos_token_id': cls_token_id,
-    #         'pad_token_id': pad_token_id,
-    #         'eos_token_ids': [sep_token_id],
-    #         'mask_token_id': mask_token_id,
-    #         # for adding od labels
-    #         'add_od_labels': args.add_od_labels, 'od_labels_start_posid': args.max_seq_a_length,
-    #         # hyperparameters of beam search
-    #         'max_length': args.max_gen_length,
-    #         'num_beams': args.num_beams,
-    #         "temperature": args.temperature,
-    #         "top_k": args.top_k,
-    #         "top_p": args.top_p,
-    #         "repetition_penalty": args.repetition_penalty,
-    #         "length_penalty": args.length_penalty,
-    #         "num_return_sequences": args.num_return_sequences,
-    #         "num_keep_best": args.num_keep_best,
-    #     }
-
-    #     # inputs = {'is_decode': True,
-    #     #             'input_ids': batch[0], 'attention_mask': batch[1],
-    #     #             'token_type_ids': batch[2], 'img_feats': batch[3],
-    #     #             'masked_pos': batch[4],
-    #     #             'do_sample': False,
-    #     #             'bos_token_id': cls_token_id,
-    #     #             'pad_token_id': pad_token_id,
-    #     #             'eos_token_ids': [sep_token_id],
-    #     #             'mask_token_id': mask_token_id,
-    #     #             # for adding od labels
-    #     #             'add_od_labels': args.add_od_labels, 'od_labels_start_posid': args.max_seq_a_length,
-    #     #             # hyperparameters of beam search
-    #     #             'max_length': args.max_gen_length,
-    #     #             'num_beams': args.num_beams,
-    #     #             "temperature": args.temperature,
-    #     #             "top_k": args.top_k,
-    #     #             "top_p": args.top_p,
-    #     #             "repetition_penalty": args.repetition_penalty,
-    #     #             "length_penalty": args.length_penalty,
-    #     #             "num_return_sequences": args.num_return_sequences,
-    #     #             "num_keep_best": args.num_keep_best,
-    #     #         }
-    #     #tic = time.time()
-    #     outputs = model(**inputs)
-
-    #     # time_meter = time.time() - tic
-    #     all_caps = outputs[0]  # batch_size * num_keep_best * max_len
-    #     all_confs = torch.exp(outputs[1])
-        
-    #     all_cap_conf_pairing = []
-    #     for caps, confs in zip(all_caps, all_confs):
-    #         cap_conf_pairing = []
-    #         for cap, conf in zip(caps, confs):
-    #             cap = tokenizer.decode(cap.tolist(), skip_special_tokens=True)
-    #             # logger.info(f"Prediction: {cap}")
-    #             # logger.info(f"Conf: {conf.item()}")
-    #             cap_conf_pairing.append(cap, conf.item())
-            
-    #         all_cap_conf_pairing.append(cap_conf_pairing)
-
-
-    # #logger.info(f"Inference model computing time: {time_meter} seconds")
-    # return tuple(all_cap_conf_pairing)
-
 def check_arguments(args):
     # shared basic checks
     basic_check_arguments(args)
@@ -500,7 +408,7 @@ def get_swinbert(args):
     return vl_transformer, config, tokenizer
 
 
-def get_captions(checkpoint = "./models/table1/youcook2/best-checkpoint/model.bin",
+def get_captions_from_folder(checkpoint = "./models/table1/youcook2/best-checkpoint/model.bin",
                        eval_dir = "./models/table1/youcook2/best-checkpoint/",
                        video_batch_folder = "./docs", device=None):
     
@@ -539,6 +447,50 @@ def get_captions(checkpoint = "./models/table1/youcook2/best-checkpoint/model.bi
     tensorizer = build_tensorizer(args, tokenizer, is_train=False)
 
     video_paths = get_dir_files(video_batch_folder)
+    # inference(args, args.test_video_fname, vl_transformer, tokenizer, tensorizer)
+    batch_outputs = batch_inference(args, video_paths, vl_transformer, tokenizer, tensorizer)
+    
+    return batch_outputs
+
+def get_captions(checkpoint = "./models/table1/youcook2/best-checkpoint/model.bin",
+                       eval_dir = "./models/table1/youcook2/best-checkpoint/",
+                       video_batch_files = [], device=None):
+    
+    shared_configs.shared_video_captioning_config(cbs=True, scst=True)
+    args = get_custom_args(shared_configs)
+    args = set_args_for_batch(args, checkpoint, eval_dir, video_batch_files, device)
+    args.do_eval = True
+    args = update_existing_config_for_inference(args)
+    
+    
+
+    # global training_saver
+    args.device = torch.device(args.device)
+    # Setup CUDA, GPU & distributed training
+    dist_init(args)
+    check_arguments(args)
+    set_seed(args.seed, args.num_gpus)
+    fp16_trainning = None
+    logger.info(
+        "device: {}, n_gpu: {}, rank: {}, "
+        "16-bits training: {}".format(
+            args.device, args.num_gpus, get_rank(), fp16_trainning))
+
+    if not is_main_process():
+        logger.disabled = True
+
+    logger.info(f"Pytorch version is: {torch.__version__}")
+    logger.info(f"Cuda version is: {torch.version.cuda}")
+    logger.info(f"cuDNN version is : {torch.backends.cudnn.version()}" )
+
+
+    vl_transformer, _, tokenizer = get_swinbert(args)
+    vl_transformer.to(args.device)
+    vl_transformer.eval()
+
+    tensorizer = build_tensorizer(args, tokenizer, is_train=False)
+
+    video_paths = video_batch_files #get_dir_files(video_batch_folder)
     # inference(args, args.test_video_fname, vl_transformer, tokenizer, tensorizer)
     batch_outputs = batch_inference(args, video_paths, vl_transformer, tokenizer, tensorizer)
     

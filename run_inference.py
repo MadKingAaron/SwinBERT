@@ -1,9 +1,15 @@
-from src.tasks.run_caption_inference_batch import get_captions
+from src.tasks.run_caption_inference_batch import get_captions, get_captions_from_folder
+
+import pandas as pd
 
 from sentence_transformers import SentenceTransformer, util
 from transformers import AutoTokenizer, LongT5ForConditionalGeneration, FlaxLongT5ForConditionalGeneration, T5ForConditionalGeneration
 
 import torch
+
+import os
+
+from tqdm import tqdm
 #from torchtext.models import T5_BASE_GENERATION
 #from torchtext.prototype.generate import GenerationUtils
 
@@ -104,12 +110,46 @@ def get_caption_list(caption_outputs:list, comparor:Sentence_Compare):
         for j in i:
             captions.append(j[1])
     
-    return make_unique_set(captions, comparor.compare)
+    return captions#make_unique_set(captions, comparor.compare)
 
 def get_summary(captions:list, summarizer):
     caption_string = ". ".join(captions)
     caption_string = "summarize: " + caption_string
 
+def infer_row(row:pd.Series, device):
+    file_names = row['video_files'].split(';;;')
+    parent_folder = os.path.join('./input_videos', row['video_id'])
+    file_names = [os.path.join(parent_folder, x) for x in file_names]
+    
+    comparitor = Sentence_Compare(device=device)
+    outputs = get_captions(video_batch_files=file_names, device=device)
+
+    parsed_output = get_caption_list(outputs, comparor=comparitor)
+
+    return parsed_output
+
+
+def format_captions(captions:list) -> str:
+    output = '. '.join(captions) + '.'
+    return output
+
+def replace_df_column(df:pd.DataFrame, column_name:str, new_values:list):
+    df[column_name + "_old"] = df[column_name]
+    df[column_name] = new_values
+
+    return df
+    
+
+
+def run_inference_on_ds(df:pd.Dataframe, device) -> list:
+    inferences = []
+    for i in tqdm(range(len(df))):
+        row = df.iloc[i]
+        captions = infer_row(row, device)
+        inferences.append(format_captions(captions))
+    
+    
+    return replace_df_column(df, 'inputs', inferences)
 
 if __name__ == "__main__":
     device = "cuda:0"
@@ -120,7 +160,7 @@ if __name__ == "__main__":
     
 
 
-    outputs = get_captions(device=device, video_batch_folder='./input_videos')
+    outputs = get_captions_from_folder(device=device, video_batch_folder='./input_videos')
     
     print(len(outputs))
     print(outputs)

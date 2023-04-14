@@ -1,0 +1,13 @@
+easydict
+tensorboardX
+sentence-transformers
+deepspeed
+fairscale
+av
+scikit-image
+protobuff==3.20
+opencv-python
+einops
+addict
+yapf
+boto3
