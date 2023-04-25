@@ -29,6 +29,11 @@ from src.modeling.video_captioning_e2e_vid_swin_bert import VideoTransformer
 from src.modeling.load_swin import get_swin_model, reload_pretrained_swin
 from src.modeling.load_bert import get_bert_model
 
+import logging
+
+
+SET_SHARED_CONFIGS = False
+
 def _online_video_decode(args, video_path):
     decoder_num_frames = getattr(args, 'max_num_frames', 2)
     frames, _ = extract_frames_from_video_path(
@@ -386,6 +391,8 @@ def get_dir_files(dir='./docs'):
   return f
 
 
+
+
 def get_swinbert(args):
      # Get Video Swin model 
     swin_model = get_swin_model(args)
@@ -407,21 +414,54 @@ def get_swinbert(args):
 
     return vl_transformer, config, tokenizer
 
-
-def get_captions_from_folder(checkpoint = "./models/table1/youcook2/best-checkpoint/model.bin",
-                       eval_dir = "./models/table1/youcook2/best-checkpoint/",
-                       video_batch_folder = "./docs", device=None):
-    
+def get_args(checkpoint = "./models/table1/youcook2/best-checkpoint/model.bin", eval_dir = "./models/table1/youcook2/best-checkpoint/",
+            video_batch_folder = "./docs", device=None):
     shared_configs.shared_video_captioning_config(cbs=True, scst=True)
     args = get_custom_args(shared_configs)
     args = set_args_for_batch(args, checkpoint, eval_dir, video_batch_folder, device)
     args.do_eval = True
     args = update_existing_config_for_inference(args)
-    
-    
 
     # global training_saver
     args.device = torch.device(args.device)
+
+    return args
+
+
+def get_model_tokenizer_tensorizer(args=None):
+    # Setup CUDA, GPU & distributed training
+    dist_init(args)
+    check_arguments(args)
+    set_seed(args.seed, args.num_gpus)
+    fp16_trainning = None
+    logger.info(
+        "device: {}, n_gpu: {}, rank: {}, "
+        "16-bits training: {}".format(
+            args.device, args.num_gpus, get_rank(), fp16_trainning))
+
+    if not is_main_process():
+        logger.disabled = True
+
+    logger.info(f"Pytorch version is: {torch.__version__}")
+    logger.info(f"Cuda version is: {torch.version.cuda}")
+    logger.info(f"cuDNN version is : {torch.backends.cudnn.version()}" )
+
+
+    vl_transformer, _, tokenizer = get_swinbert(args)
+    vl_transformer.to(args.device)
+    vl_transformer.eval()
+
+    tensorizer = build_tensorizer(args, tokenizer, is_train=False)
+
+    return {'vl_transformer':vl_transformer, 'tokenizer':tokenizer, 'tensorizer':tensorizer}
+
+def get_captions_from_folder(args=None, log=False, video_batch_folder = './docs'):
+    
+    if log == False:
+        FileOutputHandler = logging.FileHandler('logs.log')
+        logger.addHandler(FileOutputHandler)
+        logger.propagate = False
+
     # Setup CUDA, GPU & distributed training
     dist_init(args)
     check_arguments(args)
@@ -452,43 +492,36 @@ def get_captions_from_folder(checkpoint = "./models/table1/youcook2/best-checkpo
     
     return batch_outputs
 
-def get_captions(checkpoint = "./models/table1/youcook2/best-checkpoint/model.bin",
-                       eval_dir = "./models/table1/youcook2/best-checkpoint/",
-                       video_batch_files = [], device=None):
+def get_captions(args=None, log=False, video_batch_files=[], vl_transformer=None, tokenizer=None, tensorizer=None):
     
-    shared_configs.shared_video_captioning_config(cbs=True, scst=True)
-    args = get_custom_args(shared_configs)
-    args = set_args_for_batch(args, checkpoint, eval_dir, video_batch_files, device)
-    args.do_eval = True
-    args = update_existing_config_for_inference(args)
-    
-    
+    if log == False:
+        FileOutputHandler = logging.FileHandler('logs.log')
+        logger.addHandler(FileOutputHandler)
+        logger.propagate = False
 
-    # global training_saver
-    args.device = torch.device(args.device)
-    # Setup CUDA, GPU & distributed training
-    dist_init(args)
-    check_arguments(args)
-    set_seed(args.seed, args.num_gpus)
-    fp16_trainning = None
-    logger.info(
-        "device: {}, n_gpu: {}, rank: {}, "
-        "16-bits training: {}".format(
-            args.device, args.num_gpus, get_rank(), fp16_trainning))
+    # # Setup CUDA, GPU & distributed training
+    # dist_init(args)
+    # check_arguments(args)
+    # set_seed(args.seed, args.num_gpus)
+    # fp16_trainning = None
+    # logger.info(
+    #     "device: {}, n_gpu: {}, rank: {}, "
+    #     "16-bits training: {}".format(
+    #         args.device, args.num_gpus, get_rank(), fp16_trainning))
 
-    if not is_main_process():
-        logger.disabled = True
+    # if not is_main_process():
+    #     logger.disabled = True
 
-    logger.info(f"Pytorch version is: {torch.__version__}")
-    logger.info(f"Cuda version is: {torch.version.cuda}")
-    logger.info(f"cuDNN version is : {torch.backends.cudnn.version()}" )
+    # logger.info(f"Pytorch version is: {torch.__version__}")
+    # logger.info(f"Cuda version is: {torch.version.cuda}")
+    # logger.info(f"cuDNN version is : {torch.backends.cudnn.version()}" )
 
 
-    vl_transformer, _, tokenizer = get_swinbert(args)
-    vl_transformer.to(args.device)
-    vl_transformer.eval()
+    # vl_transformer, _, tokenizer = get_swinbert(args)
+    # vl_transformer.to(args.device)
+    # vl_transformer.eval()
 
-    tensorizer = build_tensorizer(args, tokenizer, is_train=False)
+    # tensorizer = build_tensorizer(args, tokenizer, is_train=False)
 
     video_paths = video_batch_files #get_dir_files(video_batch_folder)
     # inference(args, args.test_video_fname, vl_transformer, tokenizer, tensorizer)

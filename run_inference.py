@@ -1,4 +1,4 @@
-from src.tasks.run_caption_inference_batch import get_captions, get_captions_from_folder
+from src.tasks.run_caption_inference_batch import get_captions, get_captions_from_folder, get_args, get_model_tokenizer_tensorizer
 
 import pandas as pd
 
@@ -10,8 +10,19 @@ import torch
 import os
 
 from tqdm import tqdm
+
+import logging
 #from torchtext.models import T5_BASE_GENERATION
 #from torchtext.prototype.generate import GenerationUtils
+
+
+VIDEO_FOLDER = os.path.join('./VideoFolder', 'youcook2', 'Test')
+
+class DisableLogger():
+    def __enter__(self):
+       logging.disable(logging.CRITICAL)
+    def __exit__(self, exit_type, exit_value, exit_traceback):
+       logging.disable(logging.NOTSET)
 
 class Summarizer():
     def __init__(self) -> None:
@@ -116,15 +127,17 @@ def get_summary(captions:list, summarizer):
     caption_string = ". ".join(captions)
     caption_string = "summarize: " + caption_string
 
-def infer_row(row:pd.Series, device):
+def infer_row(row:pd.Series, args, components):
     file_names = row['video_files'].split(';;;')
-    parent_folder = os.path.join('./input_videos', row['video_id'])
+    parent_folder = os.path.join(VIDEO_FOLDER, row['video_id'])
     file_names = [os.path.join(parent_folder, x) for x in file_names]
-    
-    comparitor = Sentence_Compare(device=device)
-    outputs = get_captions(video_batch_files=file_names, device=device)
+    parsed_output = []
+    if os.path.exists(parent_folder):
+        with DisableLogger():
+            comparitor = None#Sentence_Compare(device=device)
+            outputs = get_captions(video_batch_files=file_names, args=args, **components)
 
-    parsed_output = get_caption_list(outputs, comparor=comparitor)
+            parsed_output = get_caption_list(outputs, comparor=comparitor)
 
     return parsed_output
 
@@ -133,23 +146,26 @@ def format_captions(captions:list) -> str:
     output = '. '.join(captions) + '.'
     return output
 
-def replace_df_column(df:pd.DataFrame, column_name:str, new_values:list):
+def replace_df_column(df:pd.DataFrame, column_name:str, new_values:list) -> pd.DataFrame:
     df[column_name + "_old"] = df[column_name]
     df[column_name] = new_values
 
     return df
-    
 
-
-def run_inference_on_ds(df:pd.Dataframe, device) -> list:
+def run_inference_on_ds(df:pd.DataFrame, device) -> pd.DataFrame:
     inferences = []
+    args = get_args(device=device)
+    components = get_model_tokenizer_tensorizer(args=args)
     for i in tqdm(range(len(df))):
         row = df.iloc[i]
-        captions = infer_row(row, device)
+        captions = infer_row(row, args, components)
         inferences.append(format_captions(captions))
     
     
-    return replace_df_column(df, 'inputs', inferences)
+    return replace_df_column(df, 'input', inferences)
+
+
+
 
 if __name__ == "__main__":
     device = "cuda:0"
@@ -157,10 +173,10 @@ if __name__ == "__main__":
     # summarizer = FlaxLongT5Summarizer()
     # summarizer = T5Summarizer()
     comparitor = Sentence_Compare(device=device)
-    
+    args = get_args(device=device, video_batch_folder='./input_videos')
 
-
-    outputs = get_captions_from_folder(device=device, video_batch_folder='./input_videos')
+    with DisableLogger():
+        outputs = get_captions_from_folder(args=args, video_batch_folder='./input_videos')
     
     print(len(outputs))
     print(outputs)
