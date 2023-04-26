@@ -115,7 +115,7 @@ def make_unique_set(in_list, comparer_function=lambda a, b: a == b):
             new_list.append(i)
     return new_list
 
-def get_caption_list(caption_outputs:list, comparor:Sentence_Compare):
+def get_caption_list(caption_outputs:list, comparor:Sentence_Compare = None):
     captions = []
     for i in caption_outputs:
         for j in i:
@@ -127,9 +127,9 @@ def get_summary(captions:list, summarizer):
     caption_string = ". ".join(captions)
     caption_string = "summarize: " + caption_string
 
-def infer_row(row:pd.Series, args, components):
+def infer_row(row:pd.Series, args, components, video_folder):
     file_names = row['video_files'].split(';;;')
-    parent_folder = os.path.join(VIDEO_FOLDER, row['video_id'])
+    parent_folder = os.path.join(video_folder, row['video_id'])
     file_names = [os.path.join(parent_folder, x) for x in file_names]
     parsed_output = []
     if os.path.exists(parent_folder):
@@ -152,13 +152,13 @@ def replace_df_column(df:pd.DataFrame, column_name:str, new_values:list) -> pd.D
 
     return df
 
-def run_inference_on_ds(df:pd.DataFrame, device) -> pd.DataFrame:
+def run_inference_on_ds(df:pd.DataFrame, device, video_folder:str = VIDEO_FOLDER) -> pd.DataFrame:
     inferences = []
     args = get_args(device=device)
     components = get_model_tokenizer_tensorizer(args=args)
     for i in tqdm(range(len(df))):
         row = df.iloc[i]
-        captions = infer_row(row, args, components)
+        captions = infer_row(row, args, components, video_folder)
         inferences.append(format_captions(captions))
     
     
