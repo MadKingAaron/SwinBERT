@@ -423,6 +423,7 @@ def get_args(checkpoint = "./models/table1/youcook2/best-checkpoint/model.bin", 
     args = update_existing_config_for_inference(args)
 
     # global training_saver
+    args.device = device
     args.device = torch.device(args.device)
 
     return args

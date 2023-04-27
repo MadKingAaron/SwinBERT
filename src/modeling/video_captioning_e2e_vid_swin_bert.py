@@ -30,6 +30,7 @@ class VideoTransformer(torch.nn.Module):
             self.sigmoid = torch.nn.Sigmoid()
 
     def forward(self, *args, **kwargs):
+        device = next(self.parameters()).device
         images = kwargs['img_feats']
         B, S, C, H, W = images.shape  # batch, segment, chanel, hight, width
         # (B x S x C x H x W) --> (B x C x S x H x W)
@@ -49,12 +50,12 @@ class VideoTransformer(torch.nn.Module):
             vid_att_len = self.max_img_seq_length
             learn_att = self.learn_vid_att.weight.reshape(vid_att_len,vid_att_len)
             learn_att = self.sigmoid(learn_att)
-            diag_mask = torch.diag(torch.ones(vid_att_len)).cuda()
+            diag_mask = torch.diag(torch.ones(vid_att_len)).to(device)
             video_attention = (1. - diag_mask)*learn_att
             learn_att = diag_mask + video_attention
             if self.sparse_mask_soft2hard:
                 learn_att = (learn_att>=0.5)*1.0
-                learn_att = learn_att.cuda()
+                learn_att = learn_att.to(device)
                 learn_att.requires_grad = False
             kwargs['attention_mask'][:, -vid_att_len::, -vid_att_len::] = learn_att
         outputs = self.trans_encoder(*args, **kwargs)
