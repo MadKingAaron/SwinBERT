@@ -1,6 +1,6 @@
 easydict
 tensorboardX
-sentence-transformers
+sentence-transformers - Nope
 deepspeed
 fairscale
 av

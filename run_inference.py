@@ -2,7 +2,7 @@ from src.tasks.run_caption_inference_batch import get_captions, get_captions_fro
 
 import pandas as pd
 
-from sentence_transformers import SentenceTransformer, util
+#from sentence_transformers import SentenceTransformer, util
 from transformers import AutoTokenizer, LongT5ForConditionalGeneration, FlaxLongT5ForConditionalGeneration, T5ForConditionalGeneration
 
 import torch
@@ -75,7 +75,7 @@ class FlaxLongT5Summarizer(Summarizer):
         summary_ids = self.model.generate(inputs["input_ids"]).sequences
         return self.tokenizer.decode(summary_ids[0], skip_special_tokens=True, clean_up_tokenization_spaces=False)
 
-
+"""
 class Sentence_Compare():
     def __init__(self, model_type = "sentence-transformers/all-MiniLM-L6-v2", device = "cpu", threshold = 0.75) -> None:
         self.model = SentenceTransformer(model_type, device = device)
@@ -113,9 +113,9 @@ def make_unique_set(in_list, comparer_function=lambda a, b: a == b):
     for i in in_list:
         if not is_in(i, new_list, comparer_function):
             new_list.append(i)
-    return new_list
+    return new_list """
 
-def get_caption_list(caption_outputs:list, comparor:Sentence_Compare):
+def get_caption_list(caption_outputs:list, comparor:any):
     captions = []
     for i in caption_outputs:
         for j in i:
@@ -172,7 +172,7 @@ if __name__ == "__main__":
     print(torch.version.cuda)
     # summarizer = FlaxLongT5Summarizer()
     # summarizer = T5Summarizer()
-    comparitor = Sentence_Compare(device=device)
+    comparitor = None#Sentence_Compare(device=device)
     args = get_args(device=device, video_batch_folder='./input_videos')
 
     with DisableLogger():
