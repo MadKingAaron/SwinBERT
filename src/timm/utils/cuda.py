@@ -5,7 +5,8 @@ Hacked together by / Copyright 2020 Ross Wightman
 import torch
 
 try:
-    from apex import amp
+    #from apex import amp
+    from torch import amp
     has_apex = True
 except ImportError:
     amp = None
