@@ -194,7 +194,7 @@ def batch_inference(args, video_paths, model, tokenizer, tensorizer):
         }
 
     batch_returns = []
-    for sample, video_path in zip(batch, video_paths):
+    for sample, video_path in zip(batch, video_paths):   
         sample_return = run_inference_on_one(args, sample, model, tokenizer,
                                              tensorizer, inputs, video_path)
         batch_returns.append(sample_return)

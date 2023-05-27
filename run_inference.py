@@ -158,11 +158,14 @@ def run_inference_on_ds(df:pd.DataFrame, device, video_folder:str=VIDEO_FOLDER) 
     components = get_model_tokenizer_tensorizer(args=args)
     for i in tqdm(range(len(df))):
         row = df.iloc[i]
-        captions = infer_row(row, args, components, video_folder)
-        inferences.append(format_captions(captions))
+        try:
+            captions = infer_row(row, args, components, video_folder)
+            inferences.append(format_captions(captions))
+        except:
+            inferences.append(format_captions([]))
     
-    
-    return replace_df_column(df, 'input', inferences)
+    df = replace_df_column(df, 'input', inferences)
+    return df[df['input'] != '.']
 
 
 
