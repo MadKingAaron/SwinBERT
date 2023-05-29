@@ -14,8 +14,10 @@ import torch
 import torch.distributed as dist
 import gc
 import deepspeed
-from apex import amp
-from apex.parallel import DistributedDataParallel as DDP
+#from apex import amp
+from torch import amp
+#from apex.parallel import DistributedDataParallel as DDP
+from torch.nn.parallel import DistributedDataParallel as DDP
 from tqdm import tqdm
 from src.configs.config import (basic_check_arguments, shared_configs, restore_training_settings)
 from src.datasets.vl_dataloader import make_data_loader

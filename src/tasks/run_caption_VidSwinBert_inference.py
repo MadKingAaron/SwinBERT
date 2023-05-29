@@ -12,7 +12,8 @@ import json
 import time
 import torch
 import torch.distributed as dist
-from apex import amp
+#from apex import amp
+from torch import amp
 import deepspeed
 from src.configs.config import (basic_check_arguments, shared_configs)
 from src.datasets.data_utils.video_ops import extract_frames_from_video_path

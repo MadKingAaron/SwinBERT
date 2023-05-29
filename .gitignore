@@ -442,3 +442,17 @@ models/table1/youcook2/tokenizer/special_tokens_map.json
 models/table1/youcook2/tokenizer/vocab.txt
 models/video_swin_transformer/swin_base_patch244_window877_kinetics400_22k.pth
 models/video_swin_transformer/swin_base_patch244_window877_kinetics600_22k.pth
+
+
+input_videos/*.mp4
+VideoFolder/*.mp4
+tester.py
+filter_empty.py
+Tester_Vids/*.mp4
+*.mp4
+download_files.py
+infered_test_filtered.csv
+vid_split.csv
+vid_inf.csv
+infered_test.csv
+vid_inf_new.csv
